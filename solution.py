@@ -68,7 +68,13 @@ def eliminate(values):
     return new_values
 
 def only_choice(values):
-    pass
+    new_values = values.copy()
+    for unit in unitlist:
+        for val in cols:
+            candidates = [box for box in unit if val in values[box]]
+            if len(candidates) == 1:
+                new_values[candidates[0]] = val
+    return new_values
 
 def reduce_puzzle(values):
     pass
