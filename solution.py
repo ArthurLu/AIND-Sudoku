@@ -9,7 +9,11 @@ boxes = cross(rows, cols)
 row_units = [cross(row, cols) for row in rows]
 col_units = [cross(rows, col) for col in cols]
 square_units = [cross(row, col) for row in ["ABC", "DEF", "GHI"] for col in ["123", "456", "789"]]
-unit_list = row_units + col_units + square_units
+diagnal_units = [[r+c for r, c in zip(row, col)] for row, col in zip([rows, rows], [cols, cols[::-1]])]
+# units with diagnal constraints
+unit_list = row_units + col_units + square_units + diagnal_units
+# units without diagnal constraints
+unit_list1 = row_units + col_units + square_units
 units = dict((box, [unit for unit in unit_list if box in unit]) for box in boxes)
 peers = dict((box, set(sum(units[box],[]))-set([box])) for box in boxes)
 
@@ -37,7 +41,7 @@ def naked_twins(values):
     new_values = values.copy()
     from collections import defaultdict
     # Iterate through all units to find possible twins
-    for unit in unit_list:
+    for unit in unit_list1:
         # Find possible twins
         twins_dict = defaultdict(list) 
         for box in unit:
