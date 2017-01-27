@@ -15,3 +15,4 @@ def visualize_assignments(assignments):
         last_assignment = assignments[i]
 
     play(filtered_assignments)
+    input('Press ENTER to exit')

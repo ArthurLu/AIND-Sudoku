@@ -1,6 +1,17 @@
+def cross(A, B):
+    "Cross product of elements in A and elements in B."
+    return [a+b for a in A for b in B]
+
 assignments = []
 rows = 'ABCDEFGHI'
 cols = '123456789'
+boxes = cross(rows, cols)
+row_units = [cross(row, cols) for row in rows]
+col_units = [cross(rows, col) for col in cols]
+square_units = [cross(row, col) for row in ["ABC", "DEF", "GHI"] for col in ["123", "456", "789"]]
+unit_list = row_units + col_units + square_units
+units = dict((box, [unit for unit in unit_list if box in unit]) for box in boxes)
+peers = dict((box, set(sum(units[box],[]))-set([box])) for box in boxes)
 
 def assign_value(values, box, value):
     """
@@ -23,10 +34,22 @@ def naked_twins(values):
 
     # Find all instances of naked twins
     # Eliminate the naked twins as possibilities for their peers
-
-def cross(A, B):
-    "Cross product of elements in A and elements in B."
-    return [a+b for a in A for b in B]
+    new_values = values.copy()
+    from collections import defaultdict
+    # Iterate through all units to find possible twins
+    for unit in unit_list:
+        # Find possible twins
+        twins_dict = defaultdict(list) 
+        for box in unit:
+            if len(new_values[box]) == 2:
+                twins_dict[new_values[box]].append(box)
+        for val, _boxes in twins_dict.items():
+            # If found twins
+            if len(_boxes) == 2:
+                for box in unit:
+                    if box not in _boxes:
+                        new_values[box] = "".join([v for v in new_values[box] if v not in val])
+    return new_values
 
 def grid_values(grid):
     """
@@ -69,18 +92,37 @@ def eliminate(values):
 
 def only_choice(values):
     new_values = values.copy()
-    for unit in unitlist:
+    for unit in unit_list:
         for val in cols:
             candidates = [box for box in unit if val in values[box]]
             if len(candidates) == 1:
-                new_values[candidates[0]] = val
+                new_values = assign_value(new_values, candidates[0], val)
+                # new_values[candidates[0]] = val
     return new_values
 
 def reduce_puzzle(values):
-    pass
+    solved = False
+    while not solved:
+        before_solved = [box for box in values if len(values[box]) == 1]
+        values = only_choice(eliminate(values))
+        after_solved = [box for box in values if len(values[box]) == 1]
+        solved =  len(before_solved) == len(after_solved)
+    return values
+
 
 def search(values):
-    pass
+    values = reduce_puzzle(values)
+    if values:
+        unsolved = [(b, c) for b, c in values.items() if len(c) > 1]
+        if unsolved == []: # Found the answer
+            return values
+        box, choices = min(unsolved, key=lambda x:len(x[1]))
+        for choice in choices:
+            new_sudoku = assign_value(values, box, choice)
+            pseudo_values = search(new_sudoku)
+            if pseudo_values: # Found the answer2
+                return pseudo_values
+    return False
 
 def solve(grid):
     """
@@ -92,21 +134,14 @@ def solve(grid):
         The dictionary representation of the final sudoku grid. False if no solution exists.
     """
     values = grid_values(grid)
-    values = eliminate(values)
-    return values
+    return search(values)
 
 
 
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
-    boxes = cross(rows, cols)
-    row_units = [cross(row, cols) for row in rows]
-    col_units = [cross(rows, col) for col in cols]
-    square_units = [cross(row, col) for row in ["ABC", "DEF", "GHI"] for col in ["123", "456", "789"]]
-    unit_list = row_units + col_units + square_units
-    units = dict((box, [unit for unit in unit_list if box in unit]) for box in boxes)
-    peers = dict((box, set(sum(units[box],[]))-set([box])) for box in boxes)
-    display(solve(diag_sudoku_grid))
+    values = solve(diag_sudoku_grid)
+    display(values)
 
     try:
         from visualize import visualize_assignments
