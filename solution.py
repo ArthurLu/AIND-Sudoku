@@ -9,10 +9,10 @@ boxes = cross(rows, cols)
 row_units = [cross(row, cols) for row in rows]
 col_units = [cross(rows, col) for col in cols]
 square_units = [cross(row, col) for row in ["ABC", "DEF", "GHI"] for col in ["123", "456", "789"]]
-diagnal_units = [[r+c for r, c in zip(row, col)] for row, col in zip([rows, rows], [cols, cols[::-1]])]
-# units with diagnal constraints
-unit_list = row_units + col_units + square_units + diagnal_units
-# units without diagnal constraints
+diagonal_units = [[r+c for r, c in zip(row, col)] for row, col in zip([rows, rows], [cols, cols[::-1]])]
+# units with diagonal constraints
+unit_list = row_units + col_units + square_units + diagonal_units
+# units without diagonal constraints
 unit_list1 = row_units + col_units + square_units
 units = dict((box, [unit for unit in unit_list if box in unit]) for box in boxes)
 peers = dict((box, set(sum(units[box],[]))-set([box])) for box in boxes)
@@ -87,6 +87,13 @@ def display(values):
         if r in 'CF': print(line)
 
 def eliminate(values):
+    """
+    If a box has a value assigned, then none of the peers of this box can have this value.
+    Args:
+        values: a dictionary representation of a sudoku grid.
+    Returns:
+        The dictionary representation of the sudoku grid.
+    """
     new_values = values.copy()
     for box in boxes:
         if len(values[box]) == 1:
@@ -95,16 +102,29 @@ def eliminate(values):
     return new_values
 
 def only_choice(values):
+    """
+    If there is only one box in a unit which would allow a certain digit, then that box must be assigned that digit.
+    Args:
+        values: a dictionary representation of a sudoku grid.
+    Returns:
+        The dictionary representation of the sudoku grid.
+    """
     new_values = values.copy()
     for unit in unit_list:
         for val in cols:
             candidates = [box for box in unit if val in values[box]]
             if len(candidates) == 1:
                 new_values = assign_value(new_values, candidates[0], val)
-                # new_values[candidates[0]] = val
     return new_values
 
 def reduce_puzzle(values):
+    """
+    Reduce the space of possible values by using eliminate and only_choice.
+    Args:
+        values: a dictionary representation of a sudoku grid.
+    Returns:
+        The dictionary representation of the reduced sudoku grid.
+    """
     solved = False
     while not solved:
         before_solved = [box for box in values if len(values[box]) == 1]
@@ -115,16 +135,24 @@ def reduce_puzzle(values):
 
 
 def search(values):
-    values = reduce_puzzle(values)
+    """
+    Find solution by using constraints propagation and iterating all possibilities.
+    Args:
+        values: a dictionary representation of a sudoku grid.
+    Returns:
+        The dictionary representation of the final sudoku grid. False if no solution exists.
+    """
+    values = reduce_puzzle(values) # Using constraints propagation
     if values:
         unsolved = [(b, c) for b, c in values.items() if len(c) > 1]
         if unsolved == []: # Found the answer
             return values
         box, choices = min(unsolved, key=lambda x:len(x[1]))
+        # Iterating all possibilities
         for choice in choices:
             new_sudoku = assign_value(values, box, choice)
             pseudo_values = search(new_sudoku)
-            if pseudo_values: # Found the answer2
+            if pseudo_values: # Found the answer
                 return pseudo_values
     return False
 
